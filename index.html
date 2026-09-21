@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Tracebound is an interactive pathfinding game for learning and comparing search algorithms." />
+  <title>Tracebound — Pathfinding Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23070b14'/%3E%3Cpath d='M13 46c7-22 14-3 22-22s13-8 16-11' fill='none' stroke='%23b7f23c' stroke-width='7' stroke-linecap='round'/%3E%3Ccircle cx='13' cy='46' r='5' fill='%23ff6b4a'/%3E%3Ccircle cx='51' cy='13' r='5' fill='%23b7f23c'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#board">Skip to board</a>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Tracebound home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>TRACEBOUND</span>
+      </a>
+      <div class="run-status" aria-live="polite">
+        <span class="status-pulse"></span>
+        <span id="statusText">READY TO TRACE</span>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeBtn" aria-label="Toggle color theme" title="Toggle theme">◐</button>
+        <button class="outline-btn" id="howBtn">How to play</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="control-rail" aria-label="Game controls">
+        <section class="rail-section">
+          <p class="eyebrow">01 · Mission</p>
+          <div class="mission-card">
+            <div>
+              <span class="mission-number">MISSION 04</span>
+              <h1>Break the grid.</h1>
+            </div>
+            <span class="difficulty">INTERMEDIATE</span>
+            <ol class="quick-steps">
+              <li><span>1</span>Choose a real-world mode and scenario.</li>
+              <li><span>2</span>Select what matters and a search strategy.</li>
+              <li><span>3</span>Visualize, disrupt conditions, then compare.</li>
+            </ol>
+          </div>
+          <label class="field-label" for="challengeSelect">Scenario</label>
+          <select id="challengeSelect">
+            <option value="custom">Custom board</option>
+            <option value="dfsBranch">Lucky deep branch</option>
+            <option value="bfsLabyrinth">Uniform labyrinth</option>
+            <option value="greedySprint">Open sprint</option>
+            <option value="dijkstraWeights">Weighted detour</option>
+            <option value="astarCompass">Guided corridor</option>
+            <option value="twoFronts">Open field</option>
+            <option value="falseHorizon">False horizon</option>
+            <option value="mudRiver">Mud river</option>
+            <option value="twinGates">Twin gates</option>
+            <option value="spiralVault">Spiral vault</option>
+            <option value="switchback">Switchback ridge</option>
+          </select>
+          <label class="field-label" for="worldSelect">Real-world mode</label>
+          <select id="worldSelect">
+            <option value="abstract">Abstract maze</option>
+            <option value="emergency">Emergency response</option>
+            <option value="warehouse">Warehouse robot</option>
+            <option value="evacuation">Evacuation</option>
+            <option value="delivery">Delivery routing</option>
+            <option value="network">Network outage</option>
+            <option value="game">Game AI</option>
+          </select>
+          <label class="field-label" for="objectiveSelect">Optimize for</label>
+          <select id="objectiveSelect">
+            <option value="travelTime">Travel time</option>
+            <option value="distance">Distance</option>
+            <option value="cost">Cost</option>
+            <option value="safety">Safety</option>
+            <option value="energy">Energy</option>
+          </select>
+          <p class="world-brief" id="worldBrief">Explore how search choices change the route through an abstract grid.</p>
+        </section>
+
+        <section class="rail-section">
+          <p class="eyebrow">02 · Draw</p>
+          <div class="tool-grid" role="group" aria-label="Drawing tools">
+            <button class="tool-btn active" data-tool="wall"><span class="tool-swatch wall"></span><span id="wallToolLabel">Wall</span></button>
+            <button class="tool-btn" data-tool="weight"><span class="tool-swatch weight"></span><span id="weightToolLabel">Terrain</span></button>
+            <button class="tool-btn" data-tool="start"><span class="tool-swatch start"></span><span id="startToolLabel">Start</span></button>
+            <button class="tool-btn" data-tool="goal"><span class="tool-swatch goal"></span><span id="goalToolLabel">Goal</span></button>
+            <button class="tool-btn" data-tool="erase"><span class="tool-swatch erase"></span>Erase</button>
+          </div>
+          <div class="inline-actions">
+            <button class="text-btn" id="mazeBtn">Generate maze</button>
+            <button class="text-btn" id="clearBtn">Clear board</button>
+          </div>
+          <div class="seed-row">
+            <label for="seedInput">Seed</label>
+            <input id="seedInput" type="number" min="1" max="100" value="42" inputmode="numeric" aria-label="Maze seed from 1 to 100" />
+          </div>
+          <button class="disruption-btn" id="disruptionBtn"><span>⚡</span><span id="disruptionLabel">Add disruption</span></button>
+          <p class="event-banner" id="eventBanner" aria-live="polite">Conditions are stable.</p>
+        </section>
+
+        <section class="rail-section algorithm-section">
+          <p class="eyebrow">03 · Choose a strategy</p>
+          <label class="field-label" for="algorithmSelect">Algorithm</label>
+          <select id="algorithmSelect">
+            <option value="astar">A* Search</option>
+            <option value="dijkstra">Dijkstra</option>
+            <option value="bfs">Breadth-First Search</option>
+            <option value="dfs">Depth-First Search</option>
+            <option value="greedy">Greedy Best-First</option>
+            <option value="bidirectional">Bidirectional BFS</option>
+          </select>
+          <div class="selected-strategy"><span>ACTIVE STRATEGY</span><strong id="selectedStrategyName">A* Search</strong></div>
+          <div class="algorithm-brief" id="algorithmBrief"></div>
+        </section>
+      </aside>
+
+      <section class="board-stage" aria-label="Pathfinding board area">
+        <div class="board-toolbar">
+          <div class="mode-switch" role="tablist" aria-label="Run mode">
+            <button class="mode-btn active" id="exploreMode" role="tab" aria-selected="true">Explore</button>
+            <button class="mode-btn" id="raceMode" role="tab" aria-selected="false">Race</button>
+          </div>
+          <div class="legend" aria-label="Board legend">
+            <span><i class="legend-dot frontier"></i>Frontier</span>
+            <span><i class="legend-dot visited"></i>Expanded</span>
+            <span><i class="legend-dot path"></i>Final path</span>
+          </div>
+          <div class="speed-control">
+            <label for="speedRange">Speed</label>
+            <input type="range" id="speedRange" min="1" max="5" value="3" />
+          </div>
+        </div>
+
+        <div class="board-wrap" id="boardWrap">
+          <canvas id="board" tabindex="0" aria-label="Interactive pathfinding grid. Choose a drawing tool, then click or drag on cells."></canvas>
+          <div class="coordinate-badge" id="coordinateBadge">CELL —</div>
+          <div class="board-hint" id="boardHint">Click + drag to draw walls</div>
+        </div>
+
+        <div class="transport">
+          <button class="transport-btn" id="stepBackBtn" aria-label="Restart search" title="Restart">↶</button>
+          <button class="play-btn" id="playBtn"><span>▶</span> Visualize</button>
+          <button class="transport-btn" id="stepBtn" aria-label="Advance one step" title="Single step">↦</button>
+          <div class="step-counter"><span id="stepCurrent">000</span><small>/ <span id="stepTotal">000</span> STEPS</small></div>
+        </div>
+
+        <div class="race-panel" id="racePanel" hidden>
+          <div class="race-heading">
+            <div><p class="eyebrow">Head-to-head</p><h2>Strategy race</h2></div>
+            <button class="primary-small" id="runRaceBtn">Run comparison</button>
+          </div>
+          <p class="race-question" id="raceQuestion">Which strategy best fits this scenario?</p>
+          <div class="prediction-row" id="predictionRow"></div>
+          <div class="race-results" id="raceResults"></div>
+          <div class="metric-implications" id="metricImplications"></div>
+        </div>
+      </section>
+
+      <aside class="inspector" aria-label="Algorithm inspector">
+        <section class="inspector-section live-card">
+          <div class="section-heading">
+            <div><p class="eyebrow">Live inspector</p><h2 id="inspectorTitle">Awaiting run</h2></div>
+            <span class="step-chip" id="eventChip">IDLE</span>
+          </div>
+          <div class="node-visual" id="nodeVisual">
+            <div class="node-ring"><span id="nodeCoord">—</span></div>
+            <div class="node-arrow">→</div>
+            <div class="goal-mini">GOAL<br><strong id="goalCoord">R16·C35</strong></div>
+          </div>
+          <p class="reason" id="reasonText">Select an algorithm and press Visualize. Pause at any moment to inspect the search.</p>
+          <div class="cost-grid">
+            <div><span>g(n)</span><strong id="gCost">—</strong><small>cost so far</small></div>
+            <div><span>h(n)</span><strong id="hCost">—</strong><small>estimate left</small></div>
+            <div><span>f(n)</span><strong id="fCost">—</strong><small>priority</small></div>
+          </div>
+        </section>
+
+        <section class="inspector-section metrics-card">
+          <div class="section-heading"><div><p class="eyebrow">Run telemetry</p><h2>What it cost</h2></div></div>
+          <div class="metric-list">
+            <div><span id="expandedMetricLabel">Nodes expanded</span><strong id="expandedMetric">0</strong></div>
+            <div><span id="frontierMetricLabel">Max frontier</span><strong id="frontierMetric">0</strong></div>
+            <div><span id="lengthMetricLabel">Path length</span><strong id="lengthMetric">—</strong></div>
+            <div><span id="costMetricLabel">Path cost</span><strong id="costMetric">—</strong></div>
+            <div><span id="timeMetricLabel">Compute time</span><strong id="timeMetric">—</strong></div>
+          </div>
+          <div class="truth-note" id="truthNote"><span>◎</span><p>Animation time is never reported as algorithm runtime.</p></div>
+        </section>
+
+        <section class="inspector-section verdict-card" id="verdictCard">
+          <p class="eyebrow">Field note</p>
+          <h2 id="verdictTitle">Why choose A*?</h2>
+          <p id="verdictText"></p>
+          <div class="tradeoff-grid">
+            <div><span>BEST WHEN</span><p id="bestWhen"></p></div>
+            <div><span>WATCH OUT</span><p id="watchOut"></p></div>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <dialog id="howDialog">
+    <button class="dialog-close" id="closeDialog" aria-label="Close">×</button>
+    <p class="eyebrow">How to play</p>
+    <h2>Design. Predict. Trace.</h2>
+    <ol>
+      <li><strong>Shape the mission.</strong> Draw walls and costly terrain, or load a prepared scenario.</li>
+      <li><strong>Choose a strategy.</strong> Read its promise and trade-off before you run it.</li>
+      <li><strong>Inspect the search.</strong> Pause or single-step to see how the frontier changes.</li>
+      <li><strong>Race the algorithms.</strong> Predict a winner, then test your reasoning on the exact same board.</li>
+    </ol>
+    <p class="dialog-tip">Tip: terrain costs 5 to cross. BFS, DFS, Greedy, and Bidirectional BFS treat every open cell as one step; Dijkstra and A* account for terrain cost.</p>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
