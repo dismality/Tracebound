@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: tracebound-pathfinding-lab
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /
+    autoDeployTrigger: commit
+    renderSubdomainPolicy: enabled
